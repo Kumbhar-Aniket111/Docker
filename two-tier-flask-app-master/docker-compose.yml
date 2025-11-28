@@ -1,0 +1,48 @@
+services:
+  mysql:
+    container_name: mysql
+    image: mysql
+    networks:
+      - flask-sql
+    volumes:
+      - mydata:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: sqldata
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "1000:3306"
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost","-uroot","-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  flask:
+    container_name: flask-app
+    build:
+      context: .
+    networks:
+      - flask-sql
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DB: sqldata
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+    ports:
+      - "5000:5000"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      - mysql
+
+volumes:
+  mydata:
+
+networks:
+  flask-sql:
